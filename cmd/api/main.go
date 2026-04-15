@@ -20,15 +20,23 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		slog.Error("application stopped", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	cfg := config.MustLoad()
 	logger := newLogger(cfg.LogLevel)
+	// init DB
 	dbConnectCtx, dbConnectCancel := context.WithTimeout(context.Background(), cfg.DB.ConnectTimeout)
 	defer dbConnectCancel()
 
 	database, err := db.NewPostgres(dbConnectCtx, cfg.DB)
 	if err != nil {
 		logger.Error("database connection failed", "error", err)
-		os.Exit(1)
+		return err
 	}
 	defer func() {
 		if err := database.Close(); err != nil {
@@ -37,37 +45,37 @@ func main() {
 	}()
 
 	logger.Info("database connected", "host", cfg.DB.Host, "port", cfg.DB.Port, "name", cfg.DB.Name)
-
+	// init repositories
 	userRepo := repository.NewUserRepository(database)
 	teamRepo := repository.NewTeamRepository(database)
 	playerRepo := repository.NewPlayerRepository(database)
 	marketListingRepo := repository.NewMarketListingRepository(database)
-
+	// init Transaction Managers
 	txManager := db.NewTxManager(database)
 	authTxManager, err := service.NewAuthTransactionManager(txManager)
 	if err != nil {
 		logger.Error("auth transaction manager init failed", "error", err)
-		os.Exit(1)
+		return err
 	}
 
 	marketTxManager, err := service.NewMarketTransactionManager(txManager)
 	if err != nil {
 		logger.Error("market transaction manager init failed", "error", err)
-		os.Exit(1)
+		return err
 	}
-
+	// init Token Provider
 	tokenProvider, err := auth.NewJWTTokenProvider(cfg.Auth.AccessSecret, cfg.Auth.AccessTTL)
 	if err != nil {
 		logger.Error("token provider init failed", "error", err)
-		os.Exit(1)
+		return err
 	}
-
+	// init Localizer
 	localizer, err := i18n.NewLocalizer()
 	if err != nil {
 		logger.Error("localizer init failed", "error", err)
-		os.Exit(1)
+		return err
 	}
-
+	// init services
 	authService, err := service.NewAuthService(
 		userRepo,
 		tokenProvider,
@@ -77,13 +85,13 @@ func main() {
 	)
 	if err != nil {
 		logger.Error("auth service init failed", "error", err)
-		os.Exit(1)
+		return err
 	}
 
 	teamService, err := service.NewTeamService(teamRepo)
 	if err != nil {
 		logger.Error("team service init failed", "error", err)
-		os.Exit(1)
+		return err
 	}
 
 	playerService, err := service.NewPlayerService(
@@ -92,7 +100,7 @@ func main() {
 	)
 	if err != nil {
 		logger.Error("player service init failed", "error", err)
-		os.Exit(1)
+		return err
 	}
 
 	marketService, err := service.NewMarketListingService(
@@ -102,14 +110,14 @@ func main() {
 	)
 	if err != nil {
 		logger.Error("market listing service init failed", "error", err)
-		os.Exit(1)
+		return err
 	}
-
+	// init handlers and middleware
 	authHandler := api.NewAuthHandler(authService, localizer)
 	meHandler := api.NewMeHandler(teamService, playerService, localizer)
 	marketHandler := api.NewMarketHandler(teamService, marketService, localizer)
 	authMiddleware := middleware.Auth(tokenProvider, localizer)
-
+	// init http server
 	server := &http.Server{
 		Addr:         cfg.HTTP.Address(),
 		Handler:      api.NewRouter(authHandler, meHandler, marketHandler, authMiddleware),
@@ -119,7 +127,7 @@ func main() {
 	}
 
 	logger.Info("starting api", "env", cfg.AppEnv, "addr", server.Addr)
-
+	// gracefully shutdown
 	serverErrCh := make(chan error, 1)
 	go func() {
 		serverErrCh <- server.ListenAndServe()
@@ -132,14 +140,13 @@ func main() {
 	case err := <-serverErrCh:
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("server stopped", "error", err)
-			os.Exit(1)
+			return err
 		}
 
 		logger.Info("server stopped")
-		return
+		return nil
 	case <-shutdownCtx.Done():
 		logger.Info("shutdown signal received")
-		stop()
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.HTTP.ShutdownTimeout)
@@ -147,15 +154,16 @@ func main() {
 
 	if err := server.Shutdown(ctx); err != nil {
 		logger.Error("graceful shutdown failed", "error", err)
-		os.Exit(1)
+		return err
 	}
 
 	if err := <-serverErrCh; err != nil && !errors.Is(err, http.ErrServerClosed) {
 		logger.Error("server stopped with unexpected error", "error", err)
-		os.Exit(1)
+		return err
 	}
 
 	logger.Info("server stopped gracefully")
+	return nil
 }
 
 func newLogger(level string) *slog.Logger {
