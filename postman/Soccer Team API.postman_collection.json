@@ -1,0 +1,1466 @@
+{
+  "info": {
+    "name": "Soccer Team API",
+    "description": "Postman collection for manual testing of the Soccer Team API happy path: auth, team/player management, market listing lifecycle, and player purchase flow.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "locale",
+      "value": "en"
+    },
+    {
+      "key": "sellerEmail",
+      "value": ""
+    },
+    {
+      "key": "sellerPassword",
+      "value": "secret123"
+    },
+    {
+      "key": "sellerAccessToken",
+      "value": ""
+    },
+    {
+      "key": "sellerPlayerId",
+      "value": ""
+    },
+    {
+      "key": "buyerEmail",
+      "value": ""
+    },
+    {
+      "key": "buyerPassword",
+      "value": "secret123"
+    },
+    {
+      "key": "buyerAccessToken",
+      "value": ""
+    },
+    {
+      "key": "listingId",
+      "value": ""
+    },
+    {
+      "key": "sellerTeamCountryId",
+      "value": ""
+    },
+    {
+      "key": "sellerPlayerCountryId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Basic liveness check."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup Seller",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('sellerEmail', 'seller_' + Date.now() + '@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.access_token) {",
+                  "    pm.collectionVariables.set('sellerAccessToken', data.access_token);",
+                  "}",
+                  "pm.test('Seller token stored', function () {",
+                  "    pm.expect(pm.collectionVariables.get('sellerAccessToken')).to.be.ok;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{sellerEmail}}\",\n  \"password\": \"{{sellerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signup"
+              ]
+            },
+            "description": "Registers the seller user and stores `sellerAccessToken`."
+          }
+        },
+        {
+          "name": "Login Seller",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.access_token) {",
+                  "    pm.collectionVariables.set('sellerAccessToken', data.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{sellerEmail}}\",\n  \"password\": \"{{sellerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in the seller user and refreshes `sellerAccessToken`."
+          }
+        },
+        {
+          "name": "Signup Buyer",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('buyerEmail', 'buyer_' + Date.now() + '@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.access_token) {",
+                  "    pm.collectionVariables.set('buyerAccessToken', data.access_token);",
+                  "}",
+                  "pm.test('Buyer token stored', function () {",
+                  "    pm.expect(pm.collectionVariables.get('buyerAccessToken')).to.be.ok;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{buyerEmail}}\",\n  \"password\": \"{{buyerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signup"
+              ]
+            },
+            "description": "Registers the buyer user and stores `buyerAccessToken`."
+          }
+        },
+        {
+          "name": "Login Buyer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.access_token) {",
+                  "    pm.collectionVariables.set('buyerAccessToken', data.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{buyerEmail}}\",\n  \"password\": \"{{buyerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in the buyer user and refreshes `buyerAccessToken`."
+          }
+        },
+        {
+          "name": "[Error] Signup Duplicate Seller",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signup"
+              ]
+            },
+            "description": "Run after `Signup Seller`. Expected conflict because the email already exists.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{sellerEmail}}\",\n  \"password\": \"{{sellerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Error code is email_taken', function () {",
+                  "    pm.expect(data.code).to.eql('email_taken');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Error] Signup Invalid Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signup"
+              ]
+            },
+            "description": "Validates email format errors on signup.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"not-an-email\",\n  \"password\": \"{{sellerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Error code is invalid_email', function () {",
+                  "    pm.expect(data.code).to.eql('invalid_email');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Error] Login Invalid Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Run after `Signup Seller`. Expected unauthorized for wrong password.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{sellerEmail}}\",\n  \"password\": \"wrong-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Error code is invalid_credentials', function () {",
+                  "    pm.expect(data.code).to.eql('invalid_credentials');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Me",
+      "item": [
+        {
+          "name": "Get Seller Team",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me/team",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me",
+                "team"
+              ]
+            },
+            "description": "Returns the seller's team and stores `sellerTeamCountryId`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.country_id) {",
+                  "    pm.collectionVariables.set('sellerTeamCountryId', String(data.country_id));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Seller Team",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me/team",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me",
+                "team"
+              ]
+            },
+            "description": "Updates the seller team. Run `Get Seller Team` first so `sellerTeamCountryId` is set.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"FC Seller Updated\",\n  \"country_id\": {{sellerTeamCountryId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Seller Players",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me/players",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me",
+                "players"
+              ]
+            },
+            "description": "Returns the seller's squad and stores `sellerPlayerId` plus `sellerPlayerCountryId` from the first player."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Players list is not empty', function () {",
+                  "    pm.expect(Array.isArray(data)).to.eql(true);",
+                  "    pm.expect(data.length).to.be.greaterThan(0);",
+                  "});",
+                  "if (Array.isArray(data) && data.length > 0) {",
+                  "    pm.collectionVariables.set('sellerPlayerId', String(data[0].id));",
+                  "    if (data[0].country_id) {",
+                  "        pm.collectionVariables.set('sellerPlayerCountryId', String(data[0].country_id));",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Seller Player",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me/players/{{sellerPlayerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me",
+                "players",
+                "{{sellerPlayerId}}"
+              ]
+            },
+            "description": "Returns a single seller player. Run `Get Seller Players` first so `sellerPlayerId` is set."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Seller Player",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me/players/{{sellerPlayerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me",
+                "players",
+                "{{sellerPlayerId}}"
+              ]
+            },
+            "description": "Updates a seller player. Run `Get Seller Players` first so `sellerPlayerId` and `sellerPlayerCountryId` are set.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Updated\",\n  \"last_name\": \"Player\",\n  \"country_id\": {{sellerPlayerCountryId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Buyer Team",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me/team",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me",
+                "team"
+              ]
+            },
+            "description": "Returns the buyer's team."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Buyer Players",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me/players",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me",
+                "players"
+              ]
+            },
+            "description": "Returns the buyer's squad."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Error] Get Team Unauthorized",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid-token"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me/team",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me",
+                "team"
+              ]
+            },
+            "description": "Uses an invalid access token to verify auth middleware."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Error code is invalid_access_token', function () {",
+                  "    pm.expect(data.code).to.eql('invalid_access_token');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Error] Get Seller Player Invalid ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me/players/0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me",
+                "players",
+                "0"
+              ]
+            },
+            "description": "Verifies route param validation for player IDs."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Error code is invalid_player_id', function () {",
+                  "    pm.expect(data.code).to.eql('invalid_player_id');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Error] Update Seller Team Invalid Name",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me/team",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me",
+                "team"
+              ]
+            },
+            "description": "Run after `Get Seller Team`. Expected validation error for empty team name.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"   \",\n  \"country_id\": {{sellerTeamCountryId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Error code is invalid_team_name', function () {",
+                  "    pm.expect(data.code).to.eql('invalid_team_name');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Error] Update Seller Player Invalid Name",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me/players/{{sellerPlayerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me",
+                "players",
+                "{{sellerPlayerId}}"
+              ]
+            },
+            "description": "Run after `Get Seller Players`. Expected validation error for empty first name.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"\",\n  \"last_name\": \"Player\",\n  \"country_id\": {{sellerPlayerCountryId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Error code is invalid_player', function () {",
+                  "    pm.expect(data.code).to.eql('invalid_player');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Market",
+      "item": [
+        {
+          "name": "Create Listing as Seller",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asking_price\": 2500000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/market/players/{{sellerPlayerId}}/list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "market",
+                "players",
+                "{{sellerPlayerId}}",
+                "list"
+              ]
+            },
+            "description": "Creates a listing for the seller's player and stores `listingId`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.id) {",
+                  "    pm.collectionVariables.set('listingId', String(data.id));",
+                  "}",
+                  "pm.test('Listing ID stored', function () {",
+                  "    pm.expect(pm.collectionVariables.get('listingId')).to.be.ok;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Public Market",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/market/players",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "market",
+                "players"
+              ]
+            },
+            "description": "Returns active market listings. If needed, stores the first listing ID in `listingId`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (Array.isArray(data) && data.length > 0 && !pm.collectionVariables.get('listingId')) {",
+                  "    pm.collectionVariables.set('listingId', String(data[0].id));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buy Listing as Buyer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/market/listings/{{listingId}}/buy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "market",
+                "listings",
+                "{{listingId}}",
+                "buy"
+              ]
+            },
+            "description": "Buys the stored listing on behalf of the buyer team."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Transfer payload contains IDs', function () {",
+                  "    pm.expect(data.player_id).to.exist;",
+                  "    pm.expect(data.seller_team_id).to.exist;",
+                  "    pm.expect(data.buyer_team_id).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel Listing as Seller",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/market/players/{{sellerPlayerId}}/list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "market",
+                "players",
+                "{{sellerPlayerId}}",
+                "list"
+              ]
+            },
+            "description": "Optional request for testing cancellation before purchase. Do not run it before the buy request in the happy path."
+          }
+        },
+        {
+          "name": "[Error] Create Listing Invalid Price",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/market/players/{{sellerPlayerId}}/list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "market",
+                "players",
+                "{{sellerPlayerId}}",
+                "list"
+              ]
+            },
+            "description": "Run after `Get Seller Players`. Expected validation error for non-positive price.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asking_price\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Error code is invalid_asking_price', function () {",
+                  "    pm.expect(data.code).to.eql('invalid_asking_price');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Error] Create Listing Duplicate Active",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/market/players/{{sellerPlayerId}}/list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "market",
+                "players",
+                "{{sellerPlayerId}}",
+                "list"
+              ]
+            },
+            "description": "Run right after `Create Listing as Seller`. Expected conflict because the player already has an active listing.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asking_price\": 2500000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Error code is listing_already_active', function () {",
+                  "    pm.expect(data.code).to.eql('listing_already_active');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Error] Buy Own Listing as Seller",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/market/listings/{{listingId}}/buy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "market",
+                "listings",
+                "{{listingId}}",
+                "buy"
+              ]
+            },
+            "description": "Run after `Create Listing as Seller`. Expected forbidden because a team cannot buy its own player."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Error code is cannot_buy_own_player', function () {",
+                  "    pm.expect(data.code).to.eql('cannot_buy_own_player');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Error] Buy Listing Invalid ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/market/listings/0/buy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "market",
+                "listings",
+                "0",
+                "buy"
+              ]
+            },
+            "description": "Verifies route param validation for listing IDs."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Error code is invalid_listing_id', function () {",
+                  "    pm.expect(data.code).to.eql('invalid_listing_id');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Error] Cancel Listing Missing Active",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{locale}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/market/players/{{sellerPlayerId}}/list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "market",
+                "players",
+                "{{sellerPlayerId}}",
+                "list"
+              ]
+            },
+            "description": "Run after `Cancel Listing as Seller` or after a successful buy. Expected not found because no active listing remains."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Error code is listing_not_found', function () {",
+                  "    pm.expect(data.code).to.eql('listing_not_found');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

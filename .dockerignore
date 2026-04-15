@@ -1,0 +1,9 @@
+.git
+.gitignore
+.env
+.env.example
+bin
+docs
+postman
+README.md
+README_RU.md

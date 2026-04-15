@@ -1,0 +1,22 @@
+{
+  "error.invalid_request": "მოთხოვნის სხეული არასწორია.",
+  "error.invalid_email": "ელფოსტის მისამართი არასწორია.",
+  "error.invalid_password": "პაროლი არასწორია.",
+  "error.email_taken": "ეს ელფოსტა უკვე გამოყენებულია.",
+  "error.invalid_credentials": "მონაცემები არასწორია.",
+  "error.invalid_access_token": "წვდომის ტოკენი არასწორია.",
+  "error.invalid_team_name": "გუნდის სახელი არასწორია.",
+  "error.invalid_player": "მოთამაშის მონაცემები არასწორია.",
+  "error.invalid_player_id": "მოთამაშის ID არასწორია.",
+  "error.invalid_listing_id": "ლისტინგის ID არასწორია.",
+  "error.invalid_country": "ქვეყანა არასწორია.",
+  "error.invalid_asking_price": "მოთხოვნილი ფასი ნულზე მეტი უნდა იყოს.",
+  "error.team_not_found": "გუნდი ვერ მოიძებნა.",
+  "error.player_not_found": "მოთამაშე ვერ მოიძებნა.",
+  "error.listing_not_found": "ლისტინგი ვერ მოიძებნა.",
+  "error.player_not_owned": "მოთამაშე მიმდინარე გუნდს არ ეკუთვნის.",
+  "error.listing_already_active": "ლისტინგი უკვე აქტიურია.",
+  "error.cannot_buy_own_player": "საკუთარ მოთამაშეს ვერ იყიდით.",
+  "error.insufficient_budget": "ბიუჯეტი არასაკმარისია.",
+  "error.internal_error": "სერვერის შიდა შეცდომა."
+}

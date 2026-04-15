@@ -1,0 +1,22 @@
+{
+  "error.invalid_request": "Invalid request body.",
+  "error.invalid_email": "Invalid email address.",
+  "error.invalid_password": "Invalid password.",
+  "error.email_taken": "Email is already taken.",
+  "error.invalid_credentials": "Invalid credentials.",
+  "error.invalid_access_token": "Invalid access token.",
+  "error.invalid_team_name": "Invalid team name.",
+  "error.invalid_player": "Invalid player data.",
+  "error.invalid_player_id": "Invalid player ID.",
+  "error.invalid_listing_id": "Invalid listing ID.",
+  "error.invalid_country": "Invalid country.",
+  "error.invalid_asking_price": "Asking price must be greater than zero.",
+  "error.team_not_found": "Team not found.",
+  "error.player_not_found": "Player not found.",
+  "error.listing_not_found": "Listing not found.",
+  "error.player_not_owned": "Player does not belong to the current team.",
+  "error.listing_already_active": "Listing is already active.",
+  "error.cannot_buy_own_player": "You cannot buy your own player.",
+  "error.insufficient_budget": "Insufficient budget.",
+  "error.internal_error": "Internal server error."
+}
